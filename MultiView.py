@@ -37,7 +37,6 @@ def main(graph_cons_weight=0.2,seq_cons_weight=0.2,cross_cons_weight=0.2,temp=1.
     parser.add_argument('--saved_model_name',type=str,default='checkpoint.pt')
     parser.add_argument('--bert_layer',type=int,default=2)
     parser.add_argument('--no_constra',type=bool,default=False,help='if True the model without contrastive task')
-    parser.add_argument('--uniform',type=bool,default=True)
     parser.add_argument('--n_gcn_layers',type=int,default=2)
     parser.add_argument('--link_weight',type=float,default=1.0,help='ranking loss weight')
     parser.add_argument('--graph_cons_weight',type=float,default=0.2)
@@ -48,21 +47,19 @@ def main(graph_cons_weight=0.2,seq_cons_weight=0.2,cross_cons_weight=0.2,temp=1.
     parser.add_argument('--hidden_act',type=str,default='gelu')
     parser.add_argument('--hidden_size',type=int,default=64)
     parser.add_argument('--hidden_emb_size',type=int,default=128)
-    parser.add_argument('--initializer_range',type=float,default=0.02)
     parser.add_argument('--describe',type=str,default='this is desrcible for model')
     parser.add_argument('--inner_loss_weight',type=float,default=0.00)
     parser.add_argument('--buy_click_weight',type=float,default=0.00)
     parser.add_argument('--curriculum',type=bool,default=False,help='if is curriculum learning')
     parser.add_argument('--remove_click_edges',type=int,default=1,help='if remove click edges when prediciton click')
-    parser.add_argument('--test',type=int,default=1)
+    parser.add_argument('--test',type=int,default=0,'if is test the model without train')
     parser.add_argument('--clamp',type=int,default=0)
     parser.add_argument('--save_each_step',type=int,default=0)
     parser.add_argument('--temp',type=float,default=1.0)
     parser.add_argument('--lamda',type=float,help='the weight of click and random dis')
-    parser.add_argument('--main_weight',type=float,default=1.0)
-    
+    parser.add_argument('--main_weight',type=float,default=1.0,help='the weight of rec task')
+  
     args=parser.parse_args()
-    # args.user_size,args.item_size,args.cate_size,args.behavior_size=987994,4162024,9439,5
     args.user_size,args.item_size,args.cate_size,args.behavior_size=22014,27155,9439,5
     tools.set_seed(counter)   
     args.mask_id=args.item_size+1
@@ -76,7 +73,6 @@ def main(graph_cons_weight=0.2,seq_cons_weight=0.2,cross_cons_weight=0.2,temp=1.
     args.graph_cons_weight=graph_cons_weight
     args.cross_cons_weight=cross_cons_weight
     args.temp=temp
-    args.root='/data/wuyq/MMCLR/checkPoints/'
     args.describe=args.describe+'{},{},{}'.format(seq_cons_weight,graph_cons_weight,cross_cons_weight)
     
     if args.describe=='this is desrcible for model':
@@ -114,8 +110,6 @@ def main(graph_cons_weight=0.2,seq_cons_weight=0.2,cross_cons_weight=0.2,temp=1.
     test_dataloader=DataLoader(test_dataset,batch_size=256,collate_fn=eval_sampler.sample_from_item_pairs,shuffle=True,num_workers=8)
     cold_start_dataset=TIMADataset.MultiViewDataset(args,root_dir=train_file,eval='cold_start',neg_sample_num=args.neg_sample_num)
     cold_start_dataloader=DataLoader(cold_start_dataset,batch_size=256,collate_fn=eval_sampler.sample_from_item_pairs,shuffle=True,num_workers=8)
-    uncold_start_dataset=TIMADataset.MultiViewDataset(args,root_dir=train_file,eval='uncold_start',neg_sample_num=args.neg_sample_num)
-    uncold_start_dataloader=DataLoader(uncold_start_dataset,batch_size=256,collate_fn=eval_sampler.sample_from_item_pairs,shuffle=True,num_workers=8)
     print('graph con w is {} seq is {} cross is {} innner is {} buy click is {} seed is{}'.format(args.graph_cons_weight,args.seq_cons_weight,args.cross_cons_weight,args.inner_loss_weight,args.buy_click_weight,counter))
     print(len(cold_start_dataset))
     print(len(vaild_dataset))
@@ -208,7 +202,6 @@ def main(graph_cons_weight=0.2,seq_cons_weight=0.2,cross_cons_weight=0.2,temp=1.
       seq_inner_losses=[]
       with torch.no_grad():
         model.eval()
-        auc_scores=[[],[]]
         for input_nodes,pos_graph,neg_graph,blocks,block_src_nodes,seq_tensors,neg_user_ids in tqdm(vaild_dataloader):
           if block_src_nodes is not None:
             block_src_nodes=[{k:v.to(args.device)   for k,v in nodes.items()} for nodes in block_src_nodes ]
@@ -268,7 +261,6 @@ def main(graph_cons_weight=0.2,seq_cons_weight=0.2,cross_cons_weight=0.2,temp=1.
         continue
       with torch.no_grad():
         model.eval()
-        auc_scores=[[],[]]
         for input_nodes,pos_graph,neg_graph,blocks,block_src_nodes,seq_tensors,neg_user_ids in tqdm(cold_start_dataloader):
           
           if block_src_nodes is not None:
@@ -318,61 +310,7 @@ def main(graph_cons_weight=0.2,seq_cons_weight=0.2,cross_cons_weight=0.2,temp=1.
       }
       print(loss_inf)
       print(post_fix)
-      with torch.no_grad():
-          model.eval()
-          auc_scores=[[],[]]
-          for input_nodes,pos_graph,neg_graph,blocks,block_src_nodes,seq_tensors,neg_user_ids in tqdm(uncold_start_dataloader):
-            
-            if block_src_nodes is not None:
-              block_src_nodes=[{k:v.to(args.device)   for k,v in nodes.items()} for nodes in block_src_nodes ]
-              input_nodes={k:v.to(args.device) for k,v in input_nodes.items()}
-              pos_graph=pos_graph.to(args.device)
-              neg_graph=neg_graph.to(args.device)
-              
-              blocks=[block.to(args.device) for block in blocks]
-            seq_tensors=[seq.to(args.device) for seq in seq_tensors]
-            graph_data=(input_nodes,pos_graph,neg_graph,blocks,block_src_nodes)
-            # loss,pr_loss,ce_loss,_,point_j,_,_,_=model(seq_tensors,is_eval=True)
-            loss,link_loss,seq_cl_loss,graph_cl_loss,cross_constra_loss,graph_inner_loss,seq_inner_loss,point_j=model(graph_data,seq_tensors,is_eval=True)
-            point_j=point_j.cpu()
-            val_losses.append(loss.item())
-            val_link_losses.append(link_loss.item())
-            val_seq_constra_losses.append(seq_cl_loss.item())
-            val_graph_constra_losses.append(graph_cl_loss.item())
-            val_corss_cons_losses.append(cross_constra_loss.item())
-            val_graph_inner_losses.append(graph_inner_loss.item())
-            val_seq_inner_losses.append(seq_inner_loss.item())
-            score=tools.get_score(point_j)
-            scores.append(score)
-      HIT_1,HIT_5,HIT_10,NDCG_1,NDCG_5,NDCG_10,MRR,AUC=np.array(scores).mean(axis=0)
-    
-      scores=[]
-
-      if not is_earlying:
-        loss_inf='Epoch:{}----> cold_start loss is {} link loss is {} seq constra loss is {} graph constra loss {} corss CL loss {} graph_inner_loss is {} seq_inner_loss is {}'.format(epoch,np.array(val_losses).mean(),
-        np.array(val_link_losses).mean(),np.array(val_seq_constra_losses).mean(),np.array(val_graph_constra_losses).mean(),
-        np.array(val_corss_cons_losses).mean(),
-        np.array(val_graph_inner_losses).mean(),
-        np.array(val_seq_inner_losses).mean(),
-        )
-      else:
-        loss_inf='counter  {}  Epoch:{}----> cold_start loss is {} link loss is {} seq constra loss is {} graph constra loss {} corss CL loss {} graph_inner_loss is {} seq_inner_loss is {}'.format(early_stop.counter,epoch,np.array(val_losses).mean(),
-        np.array(val_link_losses).mean(),np.array(val_seq_constra_losses).mean(),np.array(val_graph_constra_losses).mean(),
-        np.array(val_corss_cons_losses).mean(),
-        np.array(val_graph_inner_losses).mean(),
-        np.array(val_seq_inner_losses).mean(),
-        )
-      print(loss_inf)
-      val_losses,val_link_losses,val_seq_constra_losses,val_graph_constra_losses,val_corss_cons_losses,val_inner_losses=[],[],[],[],[],[]
-      post_fix = {
-          "Epoch": epoch,
-          "MRR": '{:.4f}'.format(MRR),
-          "AUC": '{:.4f}'.format(AUC),
-          "HIT@1": '{:.4f}'.format(HIT_1), "NDCG@1": '{:.4f}'.format(NDCG_1),
-          "HIT@5": '{:.4f}'.format(HIT_5), "NDCG@5": '{:.4f}'.format(NDCG_5),
-          "HIT@10": '{:.4f}'.format(HIT_10), "NDCG@10": '{:.4f}'.format(NDCG_10),
-      }
-
+      
       
 
       
