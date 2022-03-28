@@ -24,8 +24,6 @@ class MultiViewModel(torch.nn.Module):
             self.graph_layer=MRIG(args, self.itemEmbeddingLayer,self.userEmbeddingLayer)
         elif self.args.kernel_gcn=='MBGCN':
             self.graph_layer=MBGCN(args, self.itemEmbeddingLayer,self.userEmbeddingLayer)
-        elif self.args.kernel_gcn=='EHCF': 
-            self.graph_layer=EHCFLyaer(args, self.itemEmbeddingLayer, self.userEmbeddingLayer)
         elif self.args.kernel_gcn=='MGNN':
             self.graph_layer=MGNN(args,self.itemEmbeddingLayer,self.userEmbeddingLayer)
         elif self.args.kernel_gcn=='MBGMN':
@@ -156,11 +154,8 @@ class MultiViewModel(torch.nn.Module):
                     graph_user_embedding,graph_item_embedding,graph_neg_item_embedding,graph_cl_loss,graph_click_emb,graph_inner_loss,graph_sampled_click_emb=self.graph_layer(blocks,block_src_nodes,constra_b=sampled_view,have_cart=have_cart,seq_tensor=seq_data)
                 elif self.args.kernel_gcn=='MRIG':
                     graph_user_embedding,graph_item_embedding,graph_neg_item_embedding,graph_cl_loss,graph_click_emb,graph_sampled_click_emb=self.graph_layer(seq_data,is_eval=False)
-
                 elif self.args.kernel_gcn=='MBGCN':
                     graph_user_embedding,graph_item_embedding,graph_neg_item_embedding,graph_cl_loss,graph_click_emb,graph_sampled_click_emb,ItemBased_CF_scoring=self.graph_layer(seq_data,is_eval=False)  
-                elif self.args.kernel_gcn=='EHCF':
-                    graph_user_embedding,graph_item_embedding,graph_neg_item_embedding,graph_cl_loss,graph_click_emb,graph_sampled_click_emb=self.graph_layer(blocks,seq_data,is_eval=False)
                 elif self.args.kernel_gcn=='MGNN':
                     graph_user_embedding,graph_item_embedding,graph_neg_item_embedding,graph_cl_loss,graph_click_emb,graph_sampled_click_emb=self.graph_layer(seq_data,is_eval=False)
                 elif self.args.kernel_gcn=='MBGMN':
@@ -202,7 +197,6 @@ class MultiViewModel(torch.nn.Module):
             if self.args.clamp!=0:
                 buy_click_score=buy_click_score.clamp(max=0.7)
             buy_click_loss=self.metric(buy_click_score,torch.ones_like(buy_click_score))
-            
             buy_click_loss=self.metric(click_unclick_score,torch.ones_like(click_unclick_score))+buy_click_loss
             loss=self.args.main_weight*link_loss+ce_loss*self.args.seq_cons_weight+graph_cl_loss*self.args.graph_cons_weight+cross_constra_loss*self.args.cross_cons_weight+inner_cl_loss*self.args.inner_loss_weight+buy_click_loss*self.args.buy_click_weight
             return loss,link_loss,ce_loss,graph_cl_loss,cross_constra_loss,graph_inner_loss,buy_click_loss
@@ -262,8 +256,6 @@ class MultiViewModel(torch.nn.Module):
                 
                 neg_score=0.7*neg_score+0.3*ItemBased_CF_scoring['neg']
             score=((pos_score-neg_score)).sigmoid()
-            
-            
             point_j=torch.cat((pos_score,neg_score),dim=1)
             link_loss=self.metric(score,torch.ones_like(score))
             mask=sampled_click!=-1
@@ -278,25 +270,12 @@ class MultiViewModel(torch.nn.Module):
             multiview_sampled_click_embedding=multiview_sampled_click_embedding[mask]
             masked_pos_score=pos_score[mask] ## B  
             click_score=torch.mul(masked_mul_user_emb,multiview_sampled_click_embedding).sum(-1)
-            auc_click_scores=click_score.tolist()
             buy_click_score=(masked_pos_score-click_score).sigmoid()
             buy_click_loss=self.metric(buy_click_score,torch.ones_like(buy_click_score))
-            mutliView_neg_item_embedding=mutliView_neg_item_embedding.reshape(-1,mutliView_neg_item_embedding.shape[-1])
             loss=self.args.main_weight*link_loss+ce_loss*self.args.seq_cons_weight+graph_cl_loss*self.args.graph_cons_weight+cross_constra_loss*self.args.cross_cons_weight+inner_cl_loss*self.args.inner_loss_weight+buy_click_loss*self.args.buy_click_weight
             return loss,link_loss,ce_loss,graph_cl_loss,cross_constra_loss,graph_inner_loss,buy_click_loss,point_j
 
-    def remove_graph_edges(self,blocks,pos_graph):
-        new_graphs=[]
-        for new_graph in blocks:
-            src,dst=pos_graph.edges(etype='buy')
-            for etype in [('buy','bought'),('click','clicked'),('cart','carted'),('fav','faved')]:
-                u,i,eidsl=new_graph.edge_ids(src,dst,return_uv=True,etype=etype[0])    
-                _,_,eidsr=new_graph.edge_ids(dst,src,return_uv=True,etype=etype[1])
-                new_graph.remove_edges(eidsr,etype=etype[1])
-                new_graph.remove_edges(eidsl,etype=etype[0])
-               
-            new_graphs.append(new_graph)
-        return new_graphs
+   
 
 
 class PR_loss_for_bert(torch.nn.Module):
