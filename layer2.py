@@ -266,7 +266,7 @@ class GraphLayer(torch.nn.Module):
                     else:
                         g_cat[etype][ntype]=g_cat[etype][ntype]+h1[etype][ntype]
         for etype,v1 in h1.items():
-                # h[k]=F.relu(h[k])
+               
                 for ntype,v2 in v1.items():
                     
                     g_cat[etype][ntype]=g_cat[etype][ntype]/self.args.n_gcn_layers
