@@ -21,5 +21,5 @@
 
 ```
 Train and evaluate our model:
-	python MultiView.py
+	python MultiView.py  --mode 'multi'
 ```
