@@ -78,7 +78,7 @@ class MultiViewModel(torch.nn.Module):
 
         )
         self.metric=torch.nn.BCELoss()
-        self.f=open('/data/wuyq/MMCLR/res.graph','w')
+        #self.f=open('/data/wuyq/MMCLR/res.graph','w')
        
 
     def inner_CL(self,graph_buy_emb,graph_click_emb,seq_buy_emb,seq_click_emb,user_ids,have_diff_behaviors):
