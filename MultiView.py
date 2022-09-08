@@ -19,13 +19,14 @@ def main(graph_cons_weight=0.2,seq_cons_weight=0.2,cross_cons_weight=0.2,temp=1.
     # parser.add_argument('--seed',type=int,default=0,help='Random Seed')
     arser=argparse.ArgumentParser()
     # parser.add_argument('--seed',type=int,default=0,help='Random Seed')
+    parser.add_argument('--root', type=str, default='./', help='root folder')
     parser.add_argument('--max_seq_len',type=int,default=100,help='max length of seq')
     parser.add_argument('--batch_size',type=int,default= 256,help='the batch size of model')
     parser.add_argument('--kernel_gcn',default='lightgcn',type=str,help='graph kernel')
     parser.add_argument('--epochs',type=int,default=1000)
     parser.add_argument('--lr',type=float,default=0.001)
     parser.add_argument('--weight_decay',type=float,default=1e-4)
-    parser.add_argument('--device',type=str,default='cuda:2')
+    parser.add_argument('--device',type=str,default='cuda:0')
     parser.add_argument('--use_cuda',type=bool,default=True)
     parser.add_argument('--embedding_size',type=int,default=64)
     parser.add_argument('--neg_sample_num',type=int,default=99)
@@ -52,13 +53,13 @@ def main(graph_cons_weight=0.2,seq_cons_weight=0.2,cross_cons_weight=0.2,temp=1.
     parser.add_argument('--buy_click_weight',type=float,default=0.00)
     parser.add_argument('--curriculum',type=bool,default=False,help='if is curriculum learning')
     parser.add_argument('--remove_click_edges',type=int,default=1,help='if remove click edges when prediciton click')
-    parser.add_argument('--test',type=int,default=0,'if is test the model without train')
+    parser.add_argument('--test',type=int,default=0,help='if is test the model without train')
     parser.add_argument('--clamp',type=int,default=0)
     parser.add_argument('--save_each_step',type=int,default=0)
     parser.add_argument('--temp',type=float,default=1.0)
     parser.add_argument('--lamda',type=float,help='the weight of click and random dis')
     parser.add_argument('--main_weight',type=float,default=1.0,help='the weight of rec task')
-  
+
     args=parser.parse_args()
     args.user_size,args.item_size,args.cate_size,args.behavior_size=22014,27155,9439,5
     tools.set_seed(counter)   
@@ -84,11 +85,11 @@ def main(graph_cons_weight=0.2,seq_cons_weight=0.2,cross_cons_weight=0.2,temp=1.
     print(args)
   
     print('loading train dataset ....')
-    train_file='/data/wuyq/MMCLR/dataset/TIMA2/train_seq'
+    train_file='dataset/TIMA2/train_seq'
     train_graph,test_graph,args.item_ids,args.item_set=tools.get_TIMA_split_traintest()
-    co_graph=tools.get_co_graph()
-    args.co_g=co_graph.to(args.device)
-    print(co_graph)
+    #co_graph=tools.get_co_graph()
+    #args.co_g=co_graph.to(args.device)
+    #print(co_graph)
     # train_graph,args.item_ids,item_set=tools.get_TIMA_MRIG()
     args.g=train_graph.to(args.device)
     args.test_g=test_graph.to(args.device)
@@ -310,7 +311,7 @@ def main(graph_cons_weight=0.2,seq_cons_weight=0.2,cross_cons_weight=0.2,temp=1.
       }
       print(loss_inf)
       print(post_fix)
-      
+
       
 
       
@@ -327,4 +328,3 @@ if __name__=='__main__':
         for temp in temps:
           c+=10
           main(graph_cons_weight=graph_cons_weight,seq_cons_weight=seq_cons_weight,cross_cons_weight=cross_constra_weight,temp=temp,counter=c)
-         

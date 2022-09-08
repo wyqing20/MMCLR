@@ -29,10 +29,10 @@ def neg_sample(item_set,total_item,neg_sample_num):
         items.append(item)
     return items
 
-def get_TIMA_size(train_dataset='MMCLR/dataset/TIMA/UserBehavior.csv.train.tony',test_dataset='MMCLR/dataset/TIMA/UserBehavior.csv.test.tony'):
+def get_TIMA_size(train_dataset='dataset/TIMA/UserBehavior.csv.train.tony',test_dataset='dataset/TIMA/UserBehavior.csv.test.tony'):
     # train_data=pd.read_csv(train_dataset,names=['user_id','item_id','category_id','behavior','time'],header=None)
     # test_data=pd.read_csv(train_dataset,names=['user_id','item_id','category_id','behavior','time'],header=None)
-    if train_dataset in '/data/wuyq/MMCLR/dataset/TIMA/UserBehavior.csv.train':
+    if train_dataset in 'dataset/TIMA/UserBehavior.csv.train':
         #987994,4162024,9439,5
         user_id=np.arange(1,987995)
         item_id=np.arange(1,4162025)
@@ -80,7 +80,7 @@ def get_score(pred_list):
     return [HIT_1,HIT_5,HIT_10,NDCG_1,NDCG_5,NDCG_10,MRR,AUC]
 class EarlyStopping:
     """Early stops the training if validation loss doesn't improve after a given patience."""
-    def __init__(self, patience=7, verbose=False, delta=0, root='/data/wuyq/MMCLR/',path='checkpoint', trace_func=print,saving_model=False):
+    def __init__(self, patience=7, verbose=False, delta=0, root='',path='checkpoint', trace_func=print,saving_model=False):
         """
         Args:
             patience (int): How long to wait after last time validation loss improved.
@@ -197,7 +197,7 @@ def  make_item_set(graph,vaild_set,test_set):
     item_list=list(set(item_list))
     print(len(item_list),len(user_list))
     return item_list,user_list
-def get_TIMA_Fllow_He(file='/data/wuyq/MMCLR/dataset/TIMA2/graph.dgl'):
+def get_TIMA_Fllow_He(file='dataset/TIMA2/graph.dgl'):
     ## floow the create dataset method of He Xiangnan
     graph=dgl.load_graphs(file)
     graph=graph[0][0]
@@ -216,8 +216,8 @@ def get_TIMA_Fllow_He(file='/data/wuyq/MMCLR/dataset/TIMA2/graph.dgl'):
     item_set=set(item_ids)
     return graph,item_ids,item_set
 import _pickle as cPickle
-def make_TIMA_Fllow_He(file='/data/wuyq/MMCLR/dataset/TIMA2/graph.dgl'):
-    seq=cPickle.load(open('/data/wuyq/MMCLR/dataset/TIMA2/train_seq','rb'))
+def make_TIMA_Fllow_He(file='dataset/TIMA2/graph.dgl'):
+    seq=cPickle.load(open('dataset/TIMA2/train_seq','rb'))
     
 
     graph=dgl.load_graphs(file)
@@ -261,7 +261,7 @@ def make_TIMA_Fllow_He(file='/data/wuyq/MMCLR/dataset/TIMA2/graph.dgl'):
     return graph,vaild_graph,test_graph,item_ids
 
 
-def get_TIMA_MRIG(file='/data/wuyq/MMCLR/dataset/TIMA2/graph4MRIG.dgl'):
+def get_TIMA_MRIG(file='dataset/TIMA2/graph4MRIG.dgl'):
     ## floow the create dataset method of He Xiangnan
     graph=dgl.load_graphs(file)
     graph=graph[0][0]
@@ -270,7 +270,7 @@ def get_TIMA_MRIG(file='/data/wuyq/MMCLR/dataset/TIMA2/graph4MRIG.dgl'):
     print(a)
     return graph,item_ids,item_set
 
-def get_CIKM_MRIG(file='/data/wuyq/MMCLR/dataset/CIKM/graph4MRIG.dgl'):
+def get_CIKM_MRIG(file='dataset/CIKM/graph4MRIG.dgl'):
     ## floow the create dataset method of He Xiangnan
     graph=dgl.load_graphs(file)
     graph=graph[0][0]
@@ -280,29 +280,29 @@ def get_CIKM_MRIG(file='/data/wuyq/MMCLR/dataset/CIKM/graph4MRIG.dgl'):
     return graph,item_ids,item_set
 
 
-def get_co_graph(file='/data/wuyq/MMCLR/dataset/TIMA2/cograph4MBGCN.dgl'):
+def get_co_graph(file='dataset/TIMA2/cograph4MBGCN.dgl'):
     graph=dgl.load_graphs(file)
     graph=graph[0][0]
     return graph
 
 
 
-def get_TIMA_split_traintest(file='/data/wuyq/MMCLR/dataset/TIMA2/graph.dgl'):
-    train_file='/data/wuyq/MMCLR/dataset/TIMA2/traingraph.dgl'
+def get_TIMA_split_traintest(file='dataset/TIMA2/graph.dgl'):
+    train_file='dataset/TIMA2/traingraph.dgl'
     train_graph,item_ids,item_set=get_TIMA_Fllow_He(train_file)
     
 
-    test_file='/data/wuyq/MMCLR/dataset/TIMA2/testgraph.dgl'
+    test_file='dataset/TIMA2/testgraph.dgl'
     test_graph,item_ids,item_set=get_TIMA_Fllow_He(test_file)
     return train_graph,test_graph,item_ids,item_set
 
 
-def get_CIKM_split_traintest(file='/data/wuyq/MMCLR/dataset/TIMA2/graph.dgl'):
-    train_file='/data/wuyq/MMCLR/dataset/CIKM/traingraph.dgl'
+def get_CIKM_split_traintest(file='dataset/TIMA2/graph.dgl'):
+    train_file='dataset/CIKM/traingraph.dgl'
     train_graph,item_ids,item_set=get_TIMA_Fllow_He(train_file)
     
 
-    test_file='/data/wuyq/MMCLR/dataset/CIKM/testgraph.dgl'
+    test_file='dataset/CIKM/testgraph.dgl'
     test_graph,item_ids,item_set=get_TIMA_Fllow_He(test_file)
     return train_graph,test_graph,item_ids,item_set
    
