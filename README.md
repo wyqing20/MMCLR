@@ -24,7 +24,7 @@ Train and evaluate our model:
 # Training without BCL
 	python MultiView.py  --mode 'multi'  
 # Training with BCL
-	python MultiView.py --mode 'multi' --inner_loss_weight 0.05 --buy_click_weight 0.05
+	python MultiView.py --mode 'multi'  --buy_click_weight 0.05
 # Set the mode to sequence and feature would be processed only using BERT model
 	python MultiView.py --mode 'sequence'
 # Set the mode to sequence and feature would be processed only using LightGCN model
